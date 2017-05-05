@@ -1,0 +1,286 @@
+Source: http://www.webopius.com/content/355/getting-mamp-working-with-ssl-on-os-x
+
+Richmond | London | UK | Web Design » Client Login » Apps Webopius Enterprise Web Design LogoContact Us
+
+Search
+Home Web Design SEO Graphic Design Project Management ASPDotNetStorefront Company News Support Forum
+October 13, 2009
+Getting MAMP working with SSL on OS X
+
+Filed under: Tips — Tags: ecommerce, mac, mamp, ssl — Webopius @ 11:05 am
+At Webopius we develop a fair number of e-Commerce based sites, all of which use Secure Sockets Layer (SSL) to ensure the security of personal information entered and communicated via the browser.
+
+In many cases, we have a live site deployed and we have a development environment running locally within a Mac OS X based system running MAMP (www.mamp.info). Normally, MAMP doesn’t have the configuration settings to allow Apache to run with SSL support so this guide is intended to show you how to change that and run a functional site with support for both http:// and https:// connections using MAMP.
+
+What we will be doing is configuring MAMP to use ports 80 (http) and 443 (SSL) rather than the 8888 port it uses as standard. We will also be changing the configuration to allow you to stop and start both http and https services using the standard MAMP console rather than having to use the command line.
+
+Step 1: Backup!
+Before making any changes to MAMP, please backup your MAMP install. At the very minimum, take copies of the conf/apache/httpd.conf and conf/apache/ssl.conf files as we will be editing these.
+
+Step 2: Stop any other web server running on your machine
+Because we are going to change the port that MAMP uses for http traffic (usually 8888), you need to make sure that no other process is currently using ports 80 and 443. You can check this by typing netstat at the terminal. The usual suspect is the Mac’s own apache server which you will need to stop if it is running.
+
+Step 3. Create a self signed SSL certificate
+For development purposes, you need to create an SSL certificate. Of course for your live commercial site, you will need to purchase an authenticated certificate (we use Comodo SSL for ours) but for development purposes you can create your own free SSL certificate as follows:
+
+Generate a private key
+
+From the OS X terminal, type:
+
+openssl genrsa -des3 -out server.key 1024
+enter a password (twice)
+
+Generate Certificate Signing Request (CSR)
+
+openssl req -new -key server.key -out server.csr
+enter the password you used above for the server key
+
+Now, answer the questions it asks you, an example is shown below. The MOST important field is the Common Name which must match the domain name you are using locally (e.g. dev.mysite.com)
+
+
+Country Name (2 letter code) [AU]:GB
+State or Province Name (full name) [Some-State]:Surrey
+Locality Name (eg, city) []:Richmond
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Webopius Ltd
+Organizational Unit Name (eg, section) []:Development
+Common Name (eg, YOUR name) []:dev.mywebsite.com
+Email Address []:sales@webopius.com
+A challenge password []:
+An optional company name []:
+
+(We left the challenge password blank)
+
+Generate the Certificate
+
+openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
+enter the password you used for the private key
+
+Remove password from the server key
+
+cp server.key server.tmp
+openssl rsa -in server.tmp -out server.key
+
+Move the Certificate and key into the MAMP configuration
+
+mkdir /Applications/MAMP/conf/ssl
+cp server.crt /Applications/MAMP/conf/ssl
+cp server.key /Applications/MAMP/conf/ssl
+
+Step 5. Edit MAMP Apache Configuration to support SSL
+What we will do now, is tell MAMP to support SSL each time that it starts. Normally, you would tell Apache to to this from the command line by typing apachectl startssl but we need the convenience of starting MAMP from the standard MAMP dashboard or application window.
+
+Edit the MAMP ssl.conf file (/Applications/MAMP/conf/apache/ssl.conf)
+
+– Comment out the line that looks for SSL being defined  (change <IfDefine SSL> to #<IfDefine SSL>)
+
+– Comment out the closing define  (change </IfDefine SSL> to #</IfDefine SSL>)
+
+– Change the SSLCertificateFile entry to: SSLCertificateFile /Applications/MAMP/conf/ssl/server.crt
+– Change the SSLCertificateKeyFile entry to: SSLCertificateKeyFile /Applications/MAMP/conf/ssl/server.key
+
+– [optionally] add a VirtualHost entry for your website (after the existing VirtualHost section) as follows:
+
+<VirtualHost dev.puddingclub.com:443>
+DocumentRoot [directory location of mywebsite]
+ServerName dev.mywebsite.com
+SSLEngine on
+SSLCertificateFile /Applications/MAMP/conf/ssl/server.crt
+SSLCertificateKeyFile /Applications/MAMP/conf/ssl/server.key
+</VirtualHost>
+
+Step 6. Edit MAMP Apache HTTP Configuration to use SSL as standard
+Finally, we will edit the MAMP http configuration to listen on ports 80 and 443 (rather than 8888), include the SSL configuration and listed to the SSL ports by default.
+
+Edit the MAMP httpd.conf file (/Applications/MAMP/conf/apache/httpd.conf)
+
+– Change ‘Listen’ to: Listen 127.0.0.1:80 (rather than 8888)
+– Load SSL as standard by commenting out the define SSL statements as you did previously: <IfDefine SSL> and </IfDefine SSL> 
+– Change ‘ServerName’ to: ServerName localhost:80 (rather than 8888)
+
+Remove or change any references in your Virtual Hosts to port 8888 to port 80.
+
+Step 7. Restart Apache
+Finally, stop the existing MAMP Apache process and restart.
+
+You *should* now be able to view http://www.yoursite.com AND https://www.yoursite.com.
+
+Bookmark this article... 
+
+Add to BlinkList Add to Bloglines Add to Buzz Add to Del.icio.us Add to digg Add to Facebook Add to Fark Add to Faves 
+Add to FriendSite Add to Google Bookmarks Add to Kaboodle Add to Mister Wong Add to Netvouz Add to Newsvine Add to reddit Add to Slashdot 
+Add to Stumble Upon Add to Shoutwire Add to Squidoo Add to Technorati Add to Twitter Add to Yahoo My Web 
+Tags
+3d Add new tag apple asp aspdotnetstorefront backups bugzilla cgi chrome cloud computing cms content management CRM css Document Management drupal ecommerce expression engine flash google hiring host hosting img_assist interprise JQuery KnowledgeTree mac mamp modules mouse nginx opencart php PRINCE2 printer project management snow leopard ssl tinymce Tips translation unix webgains wordpress
+
+Comments (21)
+Profile
+Sign in with TwitterSign in with Facebook
+or
+Comment
+
+Name
+
+Email
+Not published
+
+Website
+
+Post It
+21 Replies
+18 Comments
+0 Tweets
+0 Facebook
+3 Pingbacks
+last reply was february 4, 2014
+Set SSL connection (https) for the MAMP Moodle Package at Moodle, IT and me
+November 25, 2009
+[…] follow all the steps on this page: http://www.webopius.com/content/355/getting-mamp-working-with-ssl-on-os-x. This will not be enough to make Moodle works straight, that’s why I’m writing this […]
+
+Topix
+November 26, 2009
+Thanks for the tips – getting SSL in MAMP has always been something to try and give up on  �
+One thing you might add …
+If you’re using MAMP Pro (rather than the free version of MAMP) then the httpd.conf file needs to be edited via the MAMP Pro control panel (File->Edit Template->httpd.conf) rather directly in the MAMP folder, since the master httpd.conf file overrides the local one when MAMP Pro starts up.
+Also use ‘localhost’ rather than ‘127.0.0.1’ (no quotes) since that’s already set up as the host name in MAMP Pro.
+Many thanks for your walk-through though – very helpful  �
+
+Dee
+April 3, 2010
+An alternative that follows many of the same ideas but also introduces some earier steps.
+Getting SSL to work with MAMP Pro -> http://www.rockettheme.com/blog/coding/310-getting-ssl-to-work-with-mamp-pro
+
+Martin
+April 15, 2010
+Followed all the steps but no go.
+Maybe they did something different in the 1.8.4 version.
+ssl_error_rx_record_too_long… �
+
+JPD
+May 24, 2010
+Thanks for the article. I was able to make it work on my machine.
+Can you shed some light on how to make it work for multiple domains on the same machine?
+
+Al
+June 21, 2010
+I found that after following this SSL pages had a 404 error. It turned out the document root under SSL was wrong.
+A quick fix was to make a symlink to where Apache thought it should be.
+ln -s /Users/{username}/Sites/ /Applications/MAMP/htdocs_ssl
+
+Tim
+June 22, 2010
+@Al
+I have also the 404 error. Where do I change the symlink?
+
+Z
+June 30, 2010
+Hi
+I tried following the instructions here for the free version of MAMP but it gives the error
+test$ ./startApache.sh
+httpd (no pid file) not running
+(13)Permission denied: make_sock: could not bind to address [::]:443
+no listening sockets available, shutting down
+Unable to open logs
+Could someone share a working sample for this ?
+Any help is appreciated.
+Thanks
+
+E
+September 15, 2010
+I had the same problem as Z; “could not bind to address”.
+Listen example.com:443 (instead of Listen 443) solved this.
+
+NaN
+September 21, 2010
+Thanks for this.
+@Z:
+I had the same issue.
+I had to change the SSL ports from 443 (e.g. to 9999) since they where already in use (don’t know by what process. netstat did not give me any ports) but now it works.
+Instead of symlinks i changed the DocumentRoot in the ssl.conf from “/Applications/MAMP/htdocs_ssl” to the right one. Also the virtual host settings can be done there.
+
+jonathan
+October 12, 2010
+for …/conf/apache/ssl.conf you have this:
+(change to #)
+should be this:
+(change to #)
+you also have to create a new htdocs_ssl
+Getting SSL to work on MAMP :: novapages.com
+December 2, 2010
+[…] it for a while supposing it would be too much a pain. But I found a tutorial by webopius (“Getting MAMP working with SSL on OS X“) that made it relatively simple. That was easy enough, but I was getting 404s on everything, […]
+
+steve
+December 28, 2010
+I’m also getting the same errors as Z (above). Any resolution to this?
+
+legion
+February 20, 2012
+you need to be root to bind to privileged port numbers (below 1024)
+
+Deryk Wenaus
+March 6, 2012
+I was getting 403 forbidden errors. The step to edit your ServerName in ssl.conf is not really optional. I changed mine to localhost:443 and it worked. I also changed my DocumentRoot to “/Users/YOURUSERNAME/Sites”
+there is another trick in mamp pro which means you don’t need to edit the ifDefine. Option click on the Apache tab and viola, there is an SSL checkbox.
+also, the tip about editing http.conf in MAMP pro is helpful.
+
+JP
+March 14, 2012
+The current release of MAMP (2.0.5) does not include the file /Applications/MAMP/conf/apache/ssl.conf. Should one be created? What is supposed to be entered there?
+
+Pep montero
+May 3, 2012
+Hi,
+I did every step and I doesn’t work. Here is my configuration
+in /etc/hosts:
+127.0.0.1 local.mydomain.com
+in /Application/MAMP/conf/ssl.conf:
+DocumentRoot “/Applications/MAMP/https/mydomain”
+ServerName local.mydomain.com
+SSLEngine on
+SSLCertificateFile /Applications/MAMP/conf/ssl/server.crt
+SSLCertificateKeyFile /Applications/MAMP/conf/ssl/server.key
+where /Applications/MAMP/https/mydomain is a softlink to /Applications/MAMP/htpdocs/mydomain
+When a try https://local.mydomain.com chrome returns a Error 102 (net::ERR_CONNECTION_REFUSED)
+Any clue?
+Thanks!
+Getting MAMP working with SSL on OS X ~ Webopius – Web design | Project Management | SEO | Graphic Design | E-Commerce | Content Management « Macgix's Weblog
+July 19, 2012
+[…] Getting MAMP working with SSL on OS X ~ Webopius – Web design | Project Management | SEO | Gra…. […]
+
+Michiel
+August 22, 2012
+Works perfectly!
+I couldn’t find the IfDefine anywhere, but ignored this, and it worked!
+Thanks a lot!
+(One other thing: the ‘dev.puddingclub.com’ in the VirtualHost-bit caused a little confusion, but after replacing this with my url, it worked.
+Note: the apache conf files changed structure since MAMP version 2.0.5, but this tutorial still works , without the ifDefine.
+
+Niall Campbell
+February 4, 2014
+Latest version requires a few tweaks in just the .conf files to get working correctly. So you can follow the main instructions from the article above, then follow these instructions below for .conf files.
+There’s of course no ssl.conf and no so ignore that part.
+in httpd.conf:
+-change the Listen statement to ‘Listen 80’
+Note: there should only be one of these statements in httpd.conf without a hashtag (#).
+-change the ServerName statement to ‘ServerName localhost:80’
+Note: again there should only be one of these statements in httpd.conf without a hashtag(#).
+-remove the hashtag(#) on the statement that reads ‘Include /Applications/MAMP/conf/apache/extra/httpd-ssl.conf’
+in httpd-ssl.conf
+-change the SSLCertificateFile statement to:
+SSLCertificateFile “/Applications/MAMP/conf/ssl/server.crt”
+-change the SSLCertificateKeyFile statement to:
+SSLCertificateKeyFile “/Applications/MAMP/conf/ssl/server.key”
+-change the ‘DocumentRoot “/Applications/MAMP/Library/htdocs”‘ to:
+DocumentRoot “/Applications/MAMP/htdocs”
+-change ” to
+hope this helps.
+
+Niall Campbell
+February 4, 2014
+the last instruction should read
+-change “/Applications/MAMP/Library/cgi-bin” to:
+“/Applications/MAMP/cgi-bin”
+sorry it got stripped out through some htmlentities stripper in these comments, so instruction has been changed to get around this.
+Quicklinks: Contact Us Support Forum Modules for ASPDotNetStorefront ASPDotNetStorefront News
+© Webopius Limited 2010. Web Design, Website Development, SEO and Project Management. Richmond. London. UK.
+M: +44 (0)751 648 7900 E: info@webopius.com
+About the Company | Partnerships
